@@ -11,6 +11,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from tqdm import tqdm
+from datetime import datetime
 
 # Configurações do Chrome
 chrome_options = Options()
@@ -387,10 +388,10 @@ def run_and_save_to_dataframe(cpfs):
         print("Nenhum CPF válido encontrado.")
         return
 
-    colunas_ofertas = ['CPF', 'Telefone/Linhas', 'Número da Conta', 'Tipo', 'Plano', 'Nome do Cliente', 'Protocolo', 'Segmento', 'Data de Nascimento', 'Tempo como cliente Movel', 'Tempo como cliente Fixa', 'Telefone Principal', 'Email Principal', 'Tipo de Cliente', 'Nome', 'Sobrenome', 'Telefone Alternativo 1', 'Telefone Alternativo 2', 'Email Alternativo', 'CEP', 'Estado', 'Cidade', 'Bairro', 'Logradouro', 'Numero', 'Complemento', 'Linha do Endereço', 'Oferta', 'Descrição Oferta', 'Valor Oferta', 'Oferta 2', 'Descrição Oferta 2', 'Valor Oferta 2', 'Oferta 3', 'Descrição Oferta 3', 'Valor Oferta 3', 'Oferta 4', 'Descrição Oferta 4', 'Valor Oferta 4', 'Oferta 5', 'Descrição Oferta 5', 'Valor Oferta 5']
+    colunas_ofertas = ['CPF', 'Telefone/Linhas', 'Número da Conta', 'Tipo', 'Plano', 'Nome do Cliente', 'Protocolo', 'Segmento', 'Data de Nascimento', 'Tempo como cliente Movel', 'Tempo como cliente Fixa', 'Telefone Principal', 'Email Principal', 'Tipo de Cliente', 'Nome', 'Sobrenome', 'Telefone Alternativo 1', 'Telefone Alternativo 2', 'Email Alternativo', 'CEP', 'Estado', 'Cidade', 'Bairro', 'Logradouro', 'Número', 'Complemento', 'Linha do Endereço', 'Oferta', 'Descrição Oferta', 'Valor Oferta', 'Oferta 2', 'Descrição Oferta 2', 'Valor Oferta 2', 'Oferta 3', 'Descrição Oferta 3', 'Valor Oferta 3', 'Oferta 4', 'Descrição Oferta 4', 'Valor Oferta 4', 'Oferta 5', 'Descrição Oferta 5', 'Valor Oferta 5']
     df_ofertas = pd.DataFrame(columns=colunas_ofertas)
 
-    colunas_financeiro = ['CPF', 'Mês de Referência', 'Valor Total', 'Status do Pagamento', 'Status da Fatura', 'Data do vencimento']
+    colunas_financeiro = ['CPF', 'Data', 'Valor', 'Descrição']
     df_financeiro = pd.DataFrame(columns=colunas_financeiro)
 
     try:
@@ -429,11 +430,11 @@ def run_and_save_to_dataframe(cpfs):
                 else:
                     print(f"Nenhuma informação coletada para o CPF {cpf}.")
 
-                historico_financeiro = buscar_financeiro(cpf)
-                for linha in historico_financeiro:
-                    while len(linha) < len(colunas_financeiro):  # Preencher colunas vazias com strings vazias
-                        linha.append('')
-                    df_financeiro.loc[len(df_financeiro)] = linha
+                # Salvar os DataFrames em arquivos temporários após cada CPF processado
+                now = datetime.now()
+                data_hora_str = now.strftime("%d-%m-%Y-%H%M")
+                df_ofertas.to_csv(f'dados_ofertas_temp_{data_hora_str}.csv', index=False, encoding='utf-8')
+                df_financeiro.to_csv(f'financeiro_temp_{data_hora_str}.csv', index=False, encoding='utf-8')
 
             except Exception as e:
                 print(f"Erro ao processar CPF {cpf}: {str(e)}")
@@ -443,8 +444,10 @@ def run_and_save_to_dataframe(cpfs):
     except Exception as e:
         print(f"Erro inesperado: {str(e)}")
         # Salvar os DataFrames em arquivos temporários antes de sair
-        df_ofertas.to_csv('dados_ofertas_temp.csv', index=False, encoding='utf-8')
-        df_financeiro.to_csv('financeiro_temp.csv', index=False)
+        now = datetime.now()
+        data_hora_str = now.strftime("%d-%m-%Y-%H%M")
+        df_ofertas.to_csv(f'dados_ofertas_temp_{data_hora_str}.csv', index=False, encoding='utf-8')
+        df_financeiro.to_csv(f'financeiro_temp_{data_hora_str}.csv', index=False, encoding='utf-8')
         raise
 
     # Salvar os DataFrames finais em arquivos

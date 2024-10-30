@@ -11,6 +11,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from tqdm import tqdm
+from datetime import datetime
 
 # Configurações do Chrome
 chrome_options = Options()
@@ -407,8 +408,10 @@ def run_and_save_to_dataframe(cpfs):
                     print(f"Nenhum endereço coletado para o CPF {cpf}.")
 
                 # Salvar os DataFrames em arquivos temporários após cada CPF processado
-                df_ofertas.to_csv('dados_ofertas_temp.csv', index=False, encoding='utf-8')
-                df_endereco.to_csv('dados_enderecos_temp.csv', index=False, encoding='utf-8')
+                now = datetime.now()
+                data_hora_str = now.strftime("%d-%m-%Y-%H%M")
+                df_ofertas.to_csv(f'dados_ofertas_temp_{data_hora_str}.csv', index=False, encoding='utf-8')
+                df_endereco.to_csv(f'dados_enderecos_temp_{data_hora_str}.csv', index=False, encoding='utf-8')
 
             except Exception as e:
                 print(f"Erro ao processar CPF {cpf}: {str(e)}")
@@ -418,8 +421,10 @@ def run_and_save_to_dataframe(cpfs):
     except Exception as e:
         print(f"Erro inesperado: {str(e)}")
         # Salvar os DataFrames em arquivos temporários antes de sair
-        df_ofertas.to_csv('dados_ofertas_temp.csv', index=False, encoding='utf-8')
-        df_endereco.to_csv('dados_enderecos_temp.csv', index=False, encoding='utf-8')
+        now = datetime.now()
+        data_hora_str = now.strftime("%d-%m-%Y-%H%M")
+        df_ofertas.to_csv(f'dados_ofertas_temp_{data_hora_str}.csv', index=False, encoding='utf-8')
+        df_endereco.to_csv(f'dados_enderecos_temp_{data_hora_str}.csv', index=False, encoding='utf-8')
         raise
 
     # Salvar os DataFrames finais em arquivos

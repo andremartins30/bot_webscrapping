@@ -197,8 +197,9 @@ def iniciar_janela():
     label_cpf_financeiro = tk.Label(frame_financeiro, text="Inserir CPFs")
     label_cpf_financeiro.grid(row=0, column=0, columnspan=2, pady=10)
     input_cpfs = tk.Text(frame_financeiro, height=10, width=50)
+    input_cpfs.insert(tk.END, "Insira os CPFs aqui, um por linha, sem traços, pontos ou aspas.")
     input_cpfs.grid(row=1, column=0, columnspan=2, pady=10)
-    
+        
     label_logs_financeiro = tk.Label(frame_financeiro, text="Logs")
     label_logs_financeiro.grid(row=2, column=0, columnspan=2, pady=5)
     
@@ -211,19 +212,20 @@ def iniciar_janela():
     btn_autenticar = tk.Button(frame_financeiro, text="Autenticar Página", width=20, command=autenticar_pagina)
     btn_autenticar.grid(row=6, column=0, padx=50, pady=10)
 
-    btn_executar = tk.Button(frame_financeiro, text="Executar Bot", width=20, command=lambda: executar_bot("consulta_cpf.py", input_cpfs, loading_label, logs))
+    btn_executar = tk.Button(frame_financeiro, text="Executar Robô", width=20, command=lambda: executar_bot("consulta_cpf.py", input_cpfs, loading_label, logs))
     btn_executar.grid(row=6, column=1, padx=50, pady=10)
 
-    btn_carregar_ofertas = tk.Button(frame_financeiro, text="Carregar Dados de Ofertas", width=20, command=carregar_dados_ofertas)
+    btn_carregar_ofertas = tk.Button(frame_financeiro, text="Salvar Dados de Ofertas", width=20, command=carregar_dados_ofertas)
     btn_carregar_ofertas.grid(row=7, column=0, padx=60, pady=20)
 
-    btn_carregar_financeiro = tk.Button(frame_financeiro, text="Carregar Dados Financeiros", width=20, command=carregar_dados_financeiro)
+    btn_carregar_financeiro = tk.Button(frame_financeiro, text="Salvar Dados Financeiros", width=20, command=carregar_dados_financeiro)
     btn_carregar_financeiro.grid(row=7, column=1, padx=60, pady=20)
 
     # Configuração dos widgets para a aba "Dados+Endereço"
     label_cpf_endereco = tk.Label(frame_endereco, text="Inserir CPFs")
     label_cpf_endereco.grid(row=0, column=0, columnspan=2, pady=10)
     input_cpfs_endereco = tk.Text(frame_endereco, height=10, width=50)
+    input_cpfs_endereco.insert(tk.END, "Insira os CPFs aqui, um por linha, sem traços, pontos ou aspas.")
     input_cpfs_endereco.grid(row=1, column=0, columnspan=2, pady=10)
     
     label_logs_endereco = tk.Label(frame_endereco, text="Logs")
@@ -238,13 +240,13 @@ def iniciar_janela():
     btn_autenticar_endereco = tk.Button(frame_endereco, text="Autenticar Página", width=20, command=autenticar_pagina)
     btn_autenticar_endereco.grid(row=6, column=0, padx=50, pady=10)
 
-    btn_executar_endereco = tk.Button(frame_endereco, text="Executar Bot", width=20, command=lambda: executar_bot("consulta_cpf_endereco.py", input_cpfs_endereco, loading_label_endereco, logs_endereco))
+    btn_executar_endereco = tk.Button(frame_endereco, text="Executar Robô", width=20, command=lambda: executar_bot("consulta_cpf_endereco.py", input_cpfs_endereco, loading_label_endereco, logs_endereco))
     btn_executar_endereco.grid(row=6, column=1, padx=50, pady=10)
 
-    btn_carregar_ofertas_endereco = tk.Button(frame_endereco, text="Carregar Dados de Ofertas", width=20, command=carregar_dados_ofertas)
+    btn_carregar_ofertas_endereco = tk.Button(frame_endereco, text="Salvar Dados de Ofertas", width=20, command=carregar_dados_ofertas)
     btn_carregar_ofertas_endereco.grid(row=7, column=0, padx=60, pady=20)
 
-    btn_carregar_financeiro_endereco = tk.Button(frame_endereco, text="Carregar Dados Endereço", width=20, command=carregar_dados_endereco)
+    btn_carregar_financeiro_endereco = tk.Button(frame_endereco, text="Salvar Dados Endereço", width=20, command=carregar_dados_endereco)
     btn_carregar_financeiro_endereco.grid(row=7, column=1, padx=60, pady=20)
     
     # Iniciar a janela principal
