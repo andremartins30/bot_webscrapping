@@ -8,6 +8,8 @@ a = Analysis(
     datas=[
         ('abrir_e_autenticar.py', '.'),
         ('consulta_cpf.py', '.'),
+        ('consulta_cpf_endereco.py', '.'),
+        ('chromedriver.exe', '.'),
     ],
     hiddenimports=[
         'selenium',
@@ -15,11 +17,13 @@ a = Analysis(
         'selenium.webdriver.common',
         'selenium.webdriver.support',
         'selenium.webdriver.chrome',
+        'selenium.webdriver.support.ui',
+        'selenium.webdriver.support.expected_conditions',  # Adicione esta linha
         'pandas',
         'tkinter',
         'tqdm'
     ],
-    hookspath=[],
+    hookspath=['.'],  # Adicione o diretório atual ao hookspath
     hooksconfig={},
     runtime_hooks=[],
     excludes=[],

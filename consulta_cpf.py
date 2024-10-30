@@ -1,5 +1,6 @@
 import time
 import re
+import os
 import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -14,7 +15,9 @@ from tqdm import tqdm
 # Configurações do Chrome
 chrome_options = Options()
 chrome_options.add_experimental_option("debuggerAddress", "127.0.0.1:9222")
-service = Service('C:/Users/User/Desktop/chromedriver-win64/chromedriver.exe')
+script_dir = os.path.dirname(os.path.abspath(__file__))
+chromedriver_path = os.path.join(script_dir, 'chromedriver.exe')
+service = Service(chromedriver_path)
 driver = webdriver.Chrome(service=service, options=chrome_options)
 print("Conectado à sessão existente.")
 
@@ -35,6 +38,7 @@ def wait_and_find_element(driver, by, value, timeout=10):
     except TimeoutException:
         print(f"Tempo esgotado ao procurar o elemento: {value}")
         return None
+
 def consulta_cpf(cpf):
     try:
         print(f"Iniciando consulta para CPF: {cpf}")
@@ -103,7 +107,6 @@ def consulta_plano():
         print("Página carregada completamente.")
 
         # Espera explícita para o elemento "Produtos"
-        time.sleep(2)
         produtos = wait_and_find_element(driver, By.XPATH, "/html/body/div[3]/div[2]/div/div[2]/div[1]/div/div[2]/div/div/ul/li[1]/a/span[2]", timeout=30)
         if produtos:
             produtos.click()
@@ -124,35 +127,53 @@ def consulta_plano():
                 # Seleciona a tabela de produtos
                 tabela = driver.find_elements(By.XPATH, '/html/body/div[3]/div[2]/div/div[2]/div[1]/div/div[2]/div/section/div/div/c-cf-val-products-view-selector/div/vlocity_cmt-flex-card-state/div/slot/div/div[1]/vlocity_cmt-block/div/div/div/slot/div/div[5]/vlocity_cmt-block/div/div/div/slot/div/div/c-cf-val-product-table-view/div/vlocity_cmt-flex-card-state/div/slot/div/div[3]/c-cf-val-products-data')
 
-                # Se o elemento foi encontrado, captura o texto
+                # Verifica se a tabela foi encontrada
                 if tabela:
-                    tabela_text = tabela[0].text  # Pega o texto do primeiro elemento encontrado
+                    # Encontra todas as linhas da tabela
+                    linhas = tabela[0].find_elements(By.XPATH, './div/vlocity_cmt-flex-card-state')
+                    print(f"Número de linhas encontradas: {len(linhas)}")
 
-                    # Divide o texto em uma lista de strings
-                    tabela_list = tabela_text.split('\n')
+                    dados = []
 
-                    # Organiza a lista em uma tabela com 9 colunas
-                    dados = [tabela_list[i:i + 9] for i in range(0, len(tabela_list), 9)]
+                    for linha in linhas:
+                        linha_text = None
+                        faturamento_text = None
+                        tipoProd_text = None
+                        plano_text = None
 
-                    # Filtra apenas as colunas 0, 1, 2 e 4
-                    dados_filtrados = [[linha[0], linha[1], linha[3], linha[4]] for linha in dados]
+                        try:
+                            linha_text = linha.find_element(By.XPATH, './div/slot/div/div/vlocity_cmt-block/div/div/div/slot/div/div[2]/vlocity_cmt-flex-action/div/a/span/span').text
+                        except NoSuchElementException:
+                            pass
 
-                    print("Dados capturados com sucesso.", dados_filtrados)
+                        try:
+                            faturamento_text = linha.find_element(By.XPATH, './div/slot/div/div/vlocity_cmt-block/div/div/div/slot/div/div[3]').text
+                        except NoSuchElementException:
+                            pass
 
-                    return dados_filtrados
+                        try:
+                            tipoProd_text = linha.find_element(By.XPATH, './div/slot/div/div/vlocity_cmt-block/div/div/div/slot/div/div[5]').text
+                        except NoSuchElementException:
+                            pass
+
+                        try:
+                            plano_text = linha.find_element(By.XPATH, './div/slot/div/div/vlocity_cmt-block/div/div/div/slot/div/div[6]').text
+                        except NoSuchElementException:
+                            pass
+
+                        if linha_text or faturamento_text or tipoProd_text or plano_text:
+                            linha_dados = [linha_text, faturamento_text, tipoProd_text, plano_text]
+                            print("Elementos encontrados com sucesso.", linha_dados)
+                            dados.append(linha_dados)
+
+                    return dados
                 else:
-                    print("Elemento não encontrado.")
+                    print("Elemento 'Tabela' não encontrado.")
                     return []
-            else:
-                print("Elemento 'Lista' não encontrado.")
-                return []
-        else:
-            print("Elemento 'Produto' não encontrado.")
-            return []
+
     except Exception as e:
         print(f"Erro ao procurar o elemento 'Produto': {e}")
         return []
-
 
 def buscar_informacoes():
     try:
@@ -169,6 +190,8 @@ def buscar_informacoes():
         informacoes = wait.until(EC.presence_of_all_elements_located((By.XPATH, '//span[contains(@class, "field-value")]')))
         resultados = [info.text for info in informacoes]
         
+        print(resultados)
+
         resultados.insert(1, nome_cliente)
         resultados.insert(2, elemento_span_text)
         resultados.insert(3, elemento_p_text)
@@ -317,6 +340,41 @@ def buscar_financeiro(cpf):
         print(f"Erro ao buscar financeiro: {e}")
         return []
     
+def buscar_endereco():
+    try:
+        time.sleep(1)
+
+        conta = driver.find_element(By.XPATH, '/html/body/div[3]/div[2]/div/div[2]/div[1]/div/div[2]/div/section[2]/div/div[3]/c-cf-val-billing-accounts-container/div/vlocity_cmt-flex-card-state[2]/div/slot/div/div[1]/vlocity_cmt-block/div/div/div/slot/div/div[3]/vlocity_cmt-block/div/div/div/slot/div/div/c-cf-val-billing-accounts-data/div/vlocity_cmt-flex-card-state[1]/div/slot/div/div[1]/vlocity_cmt-block/div/div/div/slot/div/div[2]/vlocity_cmt-flex-action/div/a/span/span')
+        print("Conta encontrada:", conta.text)
+        driver.execute_script("window.scrollBy(0, 200);")  # Rola 200 pixels para baixo
+        if conta:
+            conta.click()
+            print("Conta clicada com sucesso.")
+
+            # Esperar até que o endereço seja carregado
+            time.sleep(6)
+
+            # Capturar o endereço
+            endereco = driver.find_elements(By.XPATH, '/html/body/div[3]/div[2]/div/div/div/div/div[3]/div/div/div/div/c-val-billing-account-english/div/article/div[2]/vlocity_cmt-omniscript-step/div[2]/slot/vlocity_cmt-omniscript-custom-lwc[2]/slot/c-cf-val-billing-account-details-container/div/vlocity_cmt-flex-card-state/div/slot/div/div[2]/vlocity_cmt-block/div/div/div/slot/div/div[2]/vlocity_cmt-block/div/div/div/slot/div/div/c-cf-val-billing-account-address-information/div/vlocity_cmt-flex-card-state/div/slot/div/div[2]/vlocity_cmt-block/div/div/div/slot/div')
+
+            if endereco:
+                endereco_text = endereco[0].text
+                endereco_itens = endereco_text.split('\n')
+                indices_desejados = [6, 5, 4, 7, 12, 13, 14]
+                endereco_selecionado = [endereco_itens[i] for i in reversed(indices_desejados) if i < len(endereco_itens)]
+                print("Endereço selecionado:", endereco_selecionado)
+                return endereco_selecionado
+            else:
+                print("Endereço não encontrado.")
+                return []
+
+        else:
+            print("Elemento 'Conta' não encontrado.")
+            return []
+    except Exception as e:
+        print(f"Erro ao buscar endereço: {e}")
+        return []
+
 def validar_cpfs(cpfs):
     regex = re.compile(r'^\d{11}$')
     cpfs_validos = [cpf for cpf in cpfs if regex.match(cpf)]
@@ -324,14 +382,14 @@ def validar_cpfs(cpfs):
 
 def run_and_save_to_dataframe(cpfs):
     cpfs_validos = validar_cpfs(cpfs)
-    
+
     if not cpfs_validos:
         print("Nenhum CPF válido encontrado.")
         return
-    
+
     colunas_ofertas = ['CPF', 'Telefone/Linhas', 'Número da Conta', 'Tipo', 'Plano', 'Nome do Cliente', 'Protocolo', 'Segmento', 'Data de Nascimento', 'Tempo como cliente Movel', 'Tempo como cliente Fixa', 'Telefone Principal', 'Email Principal', 'Tipo de Cliente', 'Nome', 'Sobrenome', 'Telefone Alternativo 1', 'Telefone Alternativo 2', 'Email Alternativo', 'CEP', 'Estado', 'Cidade', 'Bairro', 'Logradouro', 'Numero', 'Complemento', 'Linha do Endereço', 'Oferta', 'Descrição Oferta', 'Valor Oferta', 'Oferta 2', 'Descrição Oferta 2', 'Valor Oferta 2', 'Oferta 3', 'Descrição Oferta 3', 'Valor Oferta 3', 'Oferta 4', 'Descrição Oferta 4', 'Valor Oferta 4', 'Oferta 5', 'Descrição Oferta 5', 'Valor Oferta 5']
     df_ofertas = pd.DataFrame(columns=colunas_ofertas)
-    
+
     colunas_financeiro = ['CPF', 'Mês de Referência', 'Valor Total', 'Status do Pagamento', 'Status da Fatura', 'Data do vencimento']
     df_financeiro = pd.DataFrame(columns=colunas_financeiro)
 
@@ -340,7 +398,7 @@ def run_and_save_to_dataframe(cpfs):
             try:
                 consulta_cpf(cpf)
                 resultados = buscar_informacoes()
-                
+
                 if cliente_possui_oferta():
                     ofertas = buscar_ofertas()
                     if ofertas:
@@ -349,7 +407,7 @@ def run_and_save_to_dataframe(cpfs):
                     resultados.append("Cliente não possui nenhuma oferta")
                 while len(resultados) < len(colunas_ofertas) - 4:
                     resultados.append('')
-                
+
                 # Adiciona as colunas de plano
                 planos = consulta_plano()
                 if planos:
@@ -360,25 +418,22 @@ def run_and_save_to_dataframe(cpfs):
                         resultados_com_plano.insert(2, plano[1])  # Número da Conta
                         resultados_com_plano.insert(3, plano[2])  # Tipo
                         resultados_com_plano.insert(4, plano[3])  # Plano
+
                         df_ofertas.loc[len(df_ofertas)] = resultados_com_plano
                 else:
                     resultados.extend([''] * 4)
                     df_ofertas.loc[len(df_ofertas)] = resultados
-                
+
                 if resultados:
                     print(f"Informações do CPF {cpf} armazenadas.")
                 else:
                     print(f"Nenhuma informação coletada para o CPF {cpf}.")
-                
+
                 historico_financeiro = buscar_financeiro(cpf)
                 for linha in historico_financeiro:
                     while len(linha) < len(colunas_financeiro):  # Preencher colunas vazias com strings vazias
                         linha.append('')
                     df_financeiro.loc[len(df_financeiro)] = linha
-
-                # Salvar os DataFrames em arquivos temporários após cada CPF processado
-                df_ofertas.to_csv('dados_ofertas_temp.csv', index=False, encoding='utf-8')
-                df_financeiro.to_csv('financeiro_temp.csv', index=False)
 
             except Exception as e:
                 print(f"Erro ao processar CPF {cpf}: {str(e)}")

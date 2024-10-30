@@ -11,10 +11,13 @@ from datetime import datetime
 
 # Variáveis globais para armazenar as referências dos widgets
 input_cpfs = None
+input_cpfs_endereco = None
 loading_label = None
+loading_label_endereco = None
 progress_bar = None
 janela = None  # Variável global para a janela
 logs = None  # Variável global para o campo de logs
+logs_endereco = None
 btn_carregar_ofertas = None  # Variável global para o botão de carregar ofertas
 btn_carregar_financeiro = None  # Variável global para o botão de carregar financeiro
 
@@ -32,6 +35,13 @@ def carregar_dados_financeiro():
     except FileNotFoundError:
         messagebox.showerror("Erro", "O arquivo 'financeiro.csv' não foi encontrado.")
 
+def carregar_dados_endereco():
+    try:
+        df_endereco = pd.read_csv('dados_enderecos.csv')
+        salvar_arquivo(df_endereco, "Dados Endereço")
+    except FileNotFoundError:
+        messagebox.showerror("Erro", "O arquivo 'dados_endereco.csv' não foi encontrado.")
+
 def salvar_arquivo(df, titulo):
     # Obter a data e hora atual
     now = datetime.now()
@@ -42,6 +52,8 @@ def salvar_arquivo(df, titulo):
         nome_arquivo = f"dados_ofertas_{data_hora_str}.csv"
     elif titulo == "Dados Financeiros":
         nome_arquivo = f"financeiro_{data_hora_str}.csv"
+    elif titulo == "Dados Endereço":
+        nome_arquivo = f"dados_endereco_{data_hora_str}.csv"
     else:
         nome_arquivo = f"arquivo_{data_hora_str}.csv"
     
@@ -84,12 +96,12 @@ def autenticar_pagina():
     sys.modules["abrir_e_autenticar"] = abrir_e_autenticar
     spec.loader.exec_module(abrir_e_autenticar)
 
-def executar_bot():
-    global input_cpfs, loading_label, progress_bar, janela, logs, btn_carregar_ofertas, btn_carregar_financeiro
+def executar_bot(script_name, input_widget, loading_label_widget, logs_widget):
+    global progress_bar, btn_carregar_ofertas, btn_carregar_financeiro
     
-    # Obter o caminho absoluto do arquivo consulta_cpf.py
+    # Obter o caminho absoluto do arquivo script_name
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    script_path = os.path.join(script_dir, "consulta_cpf.py")
+    script_path = os.path.join(script_dir, script_name)
     
     spec = importlib.util.spec_from_file_location("consulta_cpf", script_path)
     consulta_cpf = importlib.util.module_from_spec(spec)
@@ -104,7 +116,7 @@ def executar_bot():
         raise NameError("Os botões btn_carregar_ofertas e btn_carregar_financeiro não foram definidos.")
     
     # Ler o conteúdo da caixa de texto e remover espaços em branco e novas linhas
-    cpfs_text = input_cpfs.get("1.0", tk.END).strip().replace(" ", "").replace("\n", "")
+    cpfs_text = input_widget.get("1.0", tk.END).strip().replace(" ", "").replace("\n", "")
     
     # Verificar se o comprimento total do texto é múltiplo de 11
     if len(cpfs_text) % 11 != 0:
@@ -121,21 +133,21 @@ def executar_bot():
         raise ValueError("Nenhum CPF válido encontrado.")
     
     # Mostrar o indicador de carregamento
-    loading_label.config(text="Carregando...")
+    loading_label_widget.config(text="Carregando...")
     
     # Função para executar o bot em um thread separado
     def run_bot():
         try:
-            log_message(f"Iniciando consulta para {len(cpfs)} CPFs")
+            log_message(f"Iniciando consulta para {len(cpfs)} CPFs", logs_widget)
             consulta_cpf.run_and_save_to_dataframe(cpfs)  # Passar a lista completa de CPFs
-            log_message("Consulta concluída para todos os CPFs.")
+            log_message("Consulta concluída para todos os CPFs.", logs_widget)
             messagebox.showinfo("Sucesso", "Processo concluído com sucesso!")
         except Exception as e:
-            log_error(f"Erro durante a execução: {e}")
+            log_error(f"Erro durante a execução: {e}", logs_widget)
             messagebox.showerror("Erro", str(e))
         finally:
             # Esconder o indicador de carregamento
-            loading_label.config(text="")
+            loading_label_widget.config(text="")
             if progress_bar is not None:
                 progress_bar['value'] = 0  # Resetar a barra de progresso
             if btn_carregar_ofertas is not None and btn_carregar_financeiro is not None:
@@ -144,63 +156,96 @@ def executar_bot():
     # Iniciar o thread
     threading.Thread(target=run_bot).start()
 
-def log_message(message):
-    logs.config(state=tk.NORMAL)
-    logs.insert(tk.END, message + "\n")
-    logs.config(state=tk.DISABLED)
-    logs.yview(tk.END)  # Rolagem automática para o final
+def log_message(message, logs_widget):
+    logs_widget.config(state=tk.NORMAL)
+    logs_widget.insert(tk.END, message + "\n")
+    logs_widget.config(state=tk.DISABLED)
+    logs_widget.yview(tk.END)  # Rolagem automática para o final
     janela.update_idletasks()  # Atualizar a interface gráfica
 
-def log_error(message):
-    logs.config(state=tk.NORMAL)
-    logs.insert(tk.END, "Erro: " + message + "\n")
-    logs.config(state=tk.DISABLED)
-    logs.yview(tk.END)  # Rolagem automática para o final
+def log_error(message, logs_widget):
+    logs_widget.config(state=tk.NORMAL)
+    logs_widget.insert(tk.END, "Erro: " + message + "\n")
+    logs_widget.config(state=tk.DISABLED)
+    logs_widget.yview(tk.END)  # Rolagem automática para o final
     janela.update_idletasks()  # Atualizar a interface gráfica
 
 # Função para iniciar a janela
 def iniciar_janela():
-    global input_cpfs, loading_label, progress_bar, janela, logs, btn_carregar_ofertas, btn_carregar_financeiro  # Declarar as variáveis como global para poder modificá-las
+    global input_cpfs, input_cpfs_endereco, loading_label, loading_label_endereco, progress_bar, janela, logs, logs_endereco, btn_carregar_ofertas, btn_carregar_financeiro  # Declarar as variáveis como global para poder modificá-las
     
     # Criação da janela
     janela = tk.Tk()
-    janela.title("Bot Valentina SFA")
+    janela.title("Robô Valentina")
     
     # Definindo o tamanho da janela
     janela.geometry("550x530")
 
-    janela.grid_columnconfigure(0, weight=1)
-    janela.grid_columnconfigure(1, weight=1)
-    
-    # Criando uma área de input (caixa de texto)
-    label_cpf = tk.Label(janela, text="Inserir CPFs")
-    label_cpf.grid(row=0, column=0, columnspan=2, pady=10)
-    input_cpfs = tk.Text(janela, height=10, width=50)
+    # Criando o widget Notebook para as abas
+    notebook = ttk.Notebook(janela)
+    notebook.pack(fill='both', expand=True)
+
+    # Criando o frame para a aba "Dados+Financeiro"
+    frame_financeiro = tk.Frame(notebook)
+    notebook.add(frame_financeiro, text="Dados Financeiro")
+
+    # Criando o frame para a aba "Dados+Endereço"
+    frame_endereco = tk.Frame(notebook)
+    notebook.add(frame_endereco, text="Dados Endereço")
+
+    # Configuração dos widgets para a aba "Dados+Financeiro"
+    label_cpf_financeiro = tk.Label(frame_financeiro, text="Inserir CPFs")
+    label_cpf_financeiro.grid(row=0, column=0, columnspan=2, pady=10)
+    input_cpfs = tk.Text(frame_financeiro, height=10, width=50)
     input_cpfs.grid(row=1, column=0, columnspan=2, pady=10)
     
-    # Logs (texto fixo)
-    label_logs = tk.Label(janela, text="Logs")
-    label_logs.grid(row=2, column=0, columnspan=2, pady=5)
+    label_logs_financeiro = tk.Label(frame_financeiro, text="Logs")
+    label_logs_financeiro.grid(row=2, column=0, columnspan=2, pady=5)
     
-    # Campo de logs
-    logs = tk.Text(janela, height=5, width=50, state=tk.DISABLED)
+    logs = tk.Text(frame_financeiro, height=5, width=50, state=tk.DISABLED)
     logs.grid(row=3, column=0, columnspan=2, pady=10)
 
-    # Indicador de carregamento
-    loading_label = tk.Label(janela, text="", fg="red")
+    loading_label = tk.Label(frame_financeiro, text="", fg="red")
     loading_label.grid(row=4, column=0, columnspan=2, pady=5)
 
-    btn_autenticar = tk.Button(janela, text="Autenticar Página", width=20, command=autenticar_pagina)
+    btn_autenticar = tk.Button(frame_financeiro, text="Autenticar Página", width=20, command=autenticar_pagina)
     btn_autenticar.grid(row=6, column=0, padx=50, pady=10)
 
-    btn_executar = tk.Button(janela, text="Executar Bot", width=20, command=executar_bot)
+    btn_executar = tk.Button(frame_financeiro, text="Executar Bot", width=20, command=lambda: executar_bot("consulta_cpf.py", input_cpfs, loading_label, logs))
     btn_executar.grid(row=6, column=1, padx=50, pady=10)
 
-    btn_carregar_ofertas = tk.Button(janela, text="Carregar Dados de Ofertas", width=20, command=carregar_dados_ofertas)
+    btn_carregar_ofertas = tk.Button(frame_financeiro, text="Carregar Dados de Ofertas", width=20, command=carregar_dados_ofertas)
     btn_carregar_ofertas.grid(row=7, column=0, padx=60, pady=20)
 
-    btn_carregar_financeiro = tk.Button(janela, text="Carregar Dados Financeiros", width=20, command=carregar_dados_financeiro)
+    btn_carregar_financeiro = tk.Button(frame_financeiro, text="Carregar Dados Financeiros", width=20, command=carregar_dados_financeiro)
     btn_carregar_financeiro.grid(row=7, column=1, padx=60, pady=20)
+
+    # Configuração dos widgets para a aba "Dados+Endereço"
+    label_cpf_endereco = tk.Label(frame_endereco, text="Inserir CPFs")
+    label_cpf_endereco.grid(row=0, column=0, columnspan=2, pady=10)
+    input_cpfs_endereco = tk.Text(frame_endereco, height=10, width=50)
+    input_cpfs_endereco.grid(row=1, column=0, columnspan=2, pady=10)
+    
+    label_logs_endereco = tk.Label(frame_endereco, text="Logs")
+    label_logs_endereco.grid(row=2, column=0, columnspan=2, pady=5)
+    
+    logs_endereco = tk.Text(frame_endereco, height=5, width=50, state=tk.DISABLED)
+    logs_endereco.grid(row=3, column=0, columnspan=2, pady=10)
+
+    loading_label_endereco = tk.Label(frame_endereco, text="", fg="red")
+    loading_label_endereco.grid(row=4, column=0, columnspan=2, pady=5)
+
+    btn_autenticar_endereco = tk.Button(frame_endereco, text="Autenticar Página", width=20, command=autenticar_pagina)
+    btn_autenticar_endereco.grid(row=6, column=0, padx=50, pady=10)
+
+    btn_executar_endereco = tk.Button(frame_endereco, text="Executar Bot", width=20, command=lambda: executar_bot("consulta_cpf_endereco.py", input_cpfs_endereco, loading_label_endereco, logs_endereco))
+    btn_executar_endereco.grid(row=6, column=1, padx=50, pady=10)
+
+    btn_carregar_ofertas_endereco = tk.Button(frame_endereco, text="Carregar Dados de Ofertas", width=20, command=carregar_dados_ofertas)
+    btn_carregar_ofertas_endereco.grid(row=7, column=0, padx=60, pady=20)
+
+    btn_carregar_financeiro_endereco = tk.Button(frame_endereco, text="Carregar Dados Endereço", width=20, command=carregar_dados_endereco)
+    btn_carregar_financeiro_endereco.grid(row=7, column=1, padx=60, pady=20)
     
     # Iniciar a janela principal
     janela.mainloop()

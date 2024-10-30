@@ -81,4 +81,40 @@ def buscar_financeiro():
     except Exception as e:
         print(f"Erro ao buscar financeiro: {e}")
 
+def buscar_endereco():
+    try:
+        time.sleep(1)
+
+        conta = driver.find_element(By.XPATH, '/html/body/div[3]/div[2]/div/div[2]/div[1]/div/div[2]/div/section[2]/div/div[3]/c-cf-val-billing-accounts-container/div/vlocity_cmt-flex-card-state[2]/div/slot/div/div[1]/vlocity_cmt-block/div/div/div/slot/div/div[3]/vlocity_cmt-block/div/div/div/slot/div/div/c-cf-val-billing-accounts-data/div/vlocity_cmt-flex-card-state[1]/div/slot/div/div[1]/vlocity_cmt-block/div/div/div/slot/div/div[2]/vlocity_cmt-flex-action/div/a/span/span')
+        print("Conta encontrada:", conta.text)
+        driver.execute_script("window.scrollBy(0, 200);")  # Rola 200 pixels para baixo
+        if conta:
+            conta.click()
+            print("Conta clicada com sucesso.")
+
+            # Esperar até que o endereço seja carregado
+            time.sleep(6)
+
+            # Capturar o endereço
+            endereco = driver.find_elements(By.XPATH, '/html/body/div[3]/div[2]/div/div/div/div/div[3]/div/div/div/div/c-val-billing-account-english/div/article/div[2]/vlocity_cmt-omniscript-step/div[2]/slot/vlocity_cmt-omniscript-custom-lwc[2]/slot/c-cf-val-billing-account-details-container/div/vlocity_cmt-flex-card-state/div/slot/div/div[2]/vlocity_cmt-block/div/div/div/slot/div/div[2]/vlocity_cmt-block/div/div/div/slot/div/div/c-cf-val-billing-account-address-information/div/vlocity_cmt-flex-card-state/div/slot/div/div[2]/vlocity_cmt-block/div/div/div/slot/div')
+
+            if endereco:
+                endereco_text = endereco[0].text
+                endereco_itens = endereco_text.split('\n')
+                indices_desejados = [4, 5, 6, 7, 12, 13, 14]
+                endereco_selecionado = [endereco_itens[i] for i in reversed(indices_desejados) if i < len(endereco_itens)]
+                print("Endereço selecionado:", endereco_selecionado)
+                return endereco_selecionado
+            else:
+                print("Endereço não encontrado.")
+                return []
+
+        else:
+            print("Elemento 'Conta' não encontrado.")
+            return []
+    except Exception as e:
+        print(f"Erro ao buscar endereço: {e}")
+        return []
+
 buscar_financeiro()
+buscar_endereco()

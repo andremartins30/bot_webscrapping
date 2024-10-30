@@ -23,10 +23,13 @@ time.sleep(2)  # Aguardar 5 segundos para o Chrome iniciar
 
 # Configurar as opções do Chrome para conectar à sessão existente
 chrome_options = Options()
-chrome_options.add_experimental_option("debuggerAddress", "127.0.0.1:9222")  # Porta da depuração remota
+chrome_options.add_experimental_option("debuggerAddress", "127.0.0.1:9222") 
+
+script_dir = os.path.dirname(os.path.abspath(__file__))
+chromedriver_path = os.path.join(script_dir, 'chromedriver.exe')
 
 # Caminho para o ChromeDriver
-service = Service('C:/Users/User/Desktop/chromedriver-win64/chromedriver.exe')
+service = Service(chromedriver_path)
 driver = webdriver.Chrome(service=service, options=chrome_options)
 
 print("Conectado à sessão existente.")
